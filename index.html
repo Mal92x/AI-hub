@@ -1464,6 +1464,38 @@
                 sendMessage();
             }
         });
+        userInput.addEventListener('paste', (e) => {
+            const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+            
+            // Logika deteksi kode sederhana:
+            // 1. Memiliki banyak baris (> 2 baris)
+            // 2. Mengandung simbol khas kode atau kata kunci pemrograman
+            const lines = pasteData.split('\n');
+            const codePatterns = /[{}();\[\]]|=|=>|function|var|const|let|if|else|for|while|import|export|class|def |async|await|query|select|update|delete|cfquery|cfset/i;
+            
+            if (lines.length > 2 && codePatterns.test(pasteData)) {
+                // Jangan double wrap jika user sudah memberikan backticks
+                if (!pasteData.trim().startsWith('```')) {
+                    e.preventDefault();
+                    
+                    const start = userInput.selectionStart;
+                    const end = userInput.selectionEnd;
+                    const currentVal = userInput.value;
+                    
+                    // Bungkus dengan backticks
+                    const wrappedCode = `\n\`\`\`\n${pasteData}\n\`\`\`\n`;
+                    
+                    userInput.value = currentVal.substring(0, start) + wrappedCode + currentVal.substring(end);
+                    
+                    // Atur posisi kursor setelah paste
+                    userInput.selectionStart = userInput.selectionEnd = start + wrappedCode.length;
+                    
+                    // Trigger resize textarea
+                    userInput.dispatchEvent(new Event('input'));
+                }
+            }
+        });
+
         userInput.addEventListener('input', function () {
             this.style.height = 'auto';
             this.style.height = this.scrollHeight + 'px';
