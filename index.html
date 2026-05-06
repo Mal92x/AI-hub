@@ -927,6 +927,15 @@
                 <span class="logo-text">AI HUB</span>
             </a>
             <div class="header-status">
+                <button class="action-btn-subtle" onclick="clearChat()" title="Clear Chat" style="margin-right: -8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                </button>
                 <button class="settings-btn" onclick="openSettings()" title="Customize Agent">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -1068,10 +1077,10 @@
         };
 
         const MODELS = {
-            gpt: { name: 'GPT 5.3 Codex', model: 'openai/gpt-5.3-codex' },
-            deepseek: { name: 'DeepSeek V4 Pro', model: 'deepseek/deepseek-v4-pro' },
-            qwen: { name: 'Qwen Coder', model: 'qwen/qwen3-coder-next' },
-            gemini: { name: 'Gemini 3 Flash', model: 'gemini-3-flash-preview' }
+            gpt: { name: 'GPT 5.3 Codex', model: 'openai/gpt-5.3-codex', vision: true },
+            deepseek: { name: 'DeepSeek V4 Pro', model: 'deepseek/deepseek-v4-pro', vision: false },
+            qwen: { name: 'Qwen Coder', model: 'qwen/qwen3-coder-next', vision: false },
+            gemini: { name: 'Gemini 3 Flash', model: 'gemini-3-flash-preview', vision: true }
         };
 
         let currentProvider = 'gpt';
@@ -1079,8 +1088,37 @@
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
         const modelLabel = document.getElementById('current-model-label');
-        const conversationHistory = [];
+        let conversationHistory = JSON.parse(localStorage.getItem('ai_hub_history')) || [];
         let selectedFileData = null;
+
+        // Load history on startup
+        window.addEventListener('DOMContentLoaded', () => {
+            if (conversationHistory.length > 0) {
+                conversationHistory.forEach(msg => {
+                    appendMessage(msg.role, msg.content, msg.role === 'assistant' ? 'Saved Context' : null, false);
+                });
+            }
+
+            if (!API_KEYS.gemini || !API_KEYS.deepseek || !localStorage.getItem('ai_hub_custom_prompt')) {
+                syncFromSheet();
+            }
+        });
+
+        function saveHistory() {
+            localStorage.setItem('ai_hub_history', JSON.stringify(conversationHistory));
+        }
+
+        function clearChat() {
+            if (confirm('Hapus semua riwayat percakapan?')) {
+                conversationHistory = [];
+                localStorage.removeItem('ai_hub_history');
+                chatMessages.innerHTML = '';
+                const sysMsg = document.createElement('div');
+                sysMsg.style.cssText = 'text-align: center; font-size: 0.75rem; color: var(--text-muted); margin: 1rem 0;';
+                sysMsg.textContent = 'Conversation cleared.';
+                chatMessages.appendChild(sysMsg);
+            }
+        }
 
         function handleFileSelect(e) {
             const file = e.target.files[0];
@@ -1247,6 +1285,12 @@
             const text = userInput.value.trim();
             if (!text && !selectedFileData) return;
 
+            // Validasi Vision Support
+            if (selectedFileData && !MODELS[currentProvider].vision) {
+                alert(`Maaf, model ${MODELS[currentProvider].name} saat ini tidak mendukung input gambar. Silakan ganti ke model Gemini atau model Vision lainnya.`);
+                return;
+            }
+
             // Simpan data file ke variabel lokal sebelum di-clear
             const fileToSend = selectedFileData;
 
@@ -1260,7 +1304,14 @@
             clearFile();
 
             showLoading();
-            conversationHistory.push({ role: 'user', content: text });
+
+            // Simpan riwayat dengan info gambar jika ada
+            const historyEntry = { role: 'user', content: text };
+            if (fileToSend) {
+                historyEntry.image = { mimeType: fileToSend.mimeType, base64: fileToSend.base64 };
+            }
+            conversationHistory.push(historyEntry);
+            saveHistory();
 
             try {
                 let url, body, headers = { 'Content-Type': 'application/json' };
@@ -1269,10 +1320,23 @@
                     url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELS.gemini.model}:generateContent?key=${API_KEYS.gemini}`;
 
                     const customPrompt = localStorage.getItem('ai_hub_custom_prompt');
-                    let contents = conversationHistory.map(msg => ({
-                        role: msg.role === 'assistant' ? 'model' : 'user',
-                        parts: [{ text: msg.content }]
-                    }));
+                    let contents = conversationHistory.map(msg => {
+                        const parts = [{ text: msg.content || "Analyze this" }];
+
+                        // Sertakan gambar hanya jika ada di pesan ini (multimodal history)
+                        if (msg.image) {
+                            parts.push({
+                                inlineData: {
+                                    mimeType: msg.image.mimeType,
+                                    data: msg.image.base64
+                                }
+                            });
+                        }
+                        return {
+                            role: msg.role === 'assistant' ? 'model' : 'user',
+                            parts: parts
+                        };
+                    });
 
                     // Inject custom prompt as a system-like part for Gemini
                     if (customPrompt) {
@@ -1285,16 +1349,6 @@
                         });
                     }
 
-                    // Add file if exists to the last message using local variable
-                    if (fileToSend) {
-                        contents[contents.length - 1].parts.push({
-                            inlineData: {
-                                mimeType: fileToSend.mimeType,
-                                data: fileToSend.base64
-                            }
-                        });
-                    }
-
                     body = { contents };
                 } else {
                     url = 'https://openrouter.ai/api/v1/chat/completions';
@@ -1303,16 +1357,24 @@
                     headers['X-OpenRouter-Title'] = 'AI HUB';
 
                     const customPrompt = localStorage.getItem('ai_hub_custom_prompt') || 'You are a helpful assistant';
-                    let messages = [{ role: 'system', content: customPrompt }, ...conversationHistory];
 
-                    // Vision support for OpenRouter (OpenAI format)
-                    if (fileToSend) {
-                        const lastMsg = messages[messages.length - 1];
-                        lastMsg.content = [
-                            { type: "text", text: lastMsg.content || "Analyze this image" },
-                            { type: "image_url", image_url: { url: `data:${fileToSend.mimeType};base64,${fileToSend.base64}` } }
-                        ];
-                    }
+                    // Filter riwayat untuk OpenRouter (bersihkan gambar jika model tidak mendukung vision)
+                    const isVisionModel = MODELS[currentProvider].vision;
+                    const messages = [{ role: 'system', content: customPrompt }];
+
+                    conversationHistory.forEach(msg => {
+                        if (msg.image && isVisionModel) {
+                            messages.push({
+                                role: msg.role,
+                                content: [
+                                    { type: "text", text: msg.content || "Analyze this image" },
+                                    { type: "image_url", image_url: { url: `data:${msg.image.mimeType};base64,${msg.image.base64}` } }
+                                ]
+                            });
+                        } else {
+                            messages.push({ role: msg.role, content: msg.content });
+                        }
+                    });
 
                     body = {
                         messages: messages,
@@ -1332,6 +1394,7 @@
                     : (data.candidates?.[0]?.content?.parts?.[0]?.text || 'Gagal mendapatkan respon.');
 
                 conversationHistory.push({ role: 'assistant', content: aiResponse });
+                saveHistory();
                 appendMessage('assistant', aiResponse, MODELS[currentProvider].name);
             } catch (err) {
                 appendMessage('assistant', `Error: ${err.message}`, 'System Error');
@@ -1370,9 +1433,10 @@
             copyText(raw, btn);
         }
 
-        function appendMessage(role, text, source = '') {
+        function appendMessage(role, text, source = '', animate = true) {
             const div = document.createElement('div');
             div.className = `message ${role}`;
+            if (!animate) div.style.animation = 'none';
             div.dataset.raw = text;
 
             // Handle images in user message (display preview)
@@ -1466,30 +1530,30 @@
         });
         userInput.addEventListener('paste', (e) => {
             const pasteData = (e.clipboardData || window.clipboardData).getData('text');
-            
+
             // Logika deteksi kode sederhana:
             // 1. Memiliki banyak baris (> 2 baris)
             // 2. Mengandung simbol khas kode atau kata kunci pemrograman
             const lines = pasteData.split('\n');
             const codePatterns = /[{}();\[\]]|=|=>|function|var|const|let|if|else|for|while|import|export|class|def |async|await|query|select|update|delete|cfquery|cfset/i;
-            
+
             if (lines.length > 2 && codePatterns.test(pasteData)) {
                 // Jangan double wrap jika user sudah memberikan backticks
                 if (!pasteData.trim().startsWith('```')) {
                     e.preventDefault();
-                    
+
                     const start = userInput.selectionStart;
                     const end = userInput.selectionEnd;
                     const currentVal = userInput.value;
-                    
+
                     // Bungkus dengan backticks
                     const wrappedCode = `\n\`\`\`\n${pasteData}\n\`\`\`\n`;
-                    
+
                     userInput.value = currentVal.substring(0, start) + wrappedCode + currentVal.substring(end);
-                    
+
                     // Atur posisi kursor setelah paste
                     userInput.selectionStart = userInput.selectionEnd = start + wrappedCode.length;
-                    
+
                     // Trigger resize textarea
                     userInput.dispatchEvent(new Event('input'));
                 }
