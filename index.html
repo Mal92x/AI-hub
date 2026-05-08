@@ -1099,10 +1099,13 @@
                     display: flex; align-items: center;
                     padding: 4px; border-radius: 8px;
                     transition: background 0.2s ease;
-                " onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
-                    <svg id="flag-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: var(--secondary); transition: color 0.3s ease;">
-                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-                        <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                " onmouseover="this.style.background='rgba(0,0,0,0.05)'"
+                    onmouseout="this.style.background='transparent'">
+                    <svg id="flag-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
+                        style="color: var(--secondary); transition: color 0.3s ease;">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                        <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" fill="none" />
                     </svg>
                 </button>
             </div>
@@ -1127,7 +1130,8 @@
         <footer class="input-container">
             <div class="controls-row">
                 <div class="segmented-control">
-                    <button class="segment-btn active" onclick="switchModel('gpt')">gpt 5.3 codex</button>
+                    <button class="segment-btn active" id="btn-free" onclick="switchModel('free')">OpenRouter
+                        Free</button>
                     <button class="segment-btn" onclick="switchModel('deepseek')">DeepSeek v.4 Pro</button>
                     <button class="segment-btn" onclick="switchModel('qwen')">Qwen Coder</button>
                     <button class="segment-btn" onclick="switchModel('gemini')">Gemini 3 Flash</button>
@@ -1189,7 +1193,7 @@
             </div>
 
             <div class="settings-section">
-                <label class="settings-label">OpenRouter API Key (DeepSeek/GPT)</label>
+                <label class="settings-label">OpenRouter API Key (DeepSeek/Free)</label>
                 <div class="api-input-group">
                     <input type="password" id="api-key-openrouter" class="api-input" placeholder="sk-or-v1-...">
                 </div>
@@ -1231,13 +1235,13 @@
         };
 
         const MODELS = {
-            gpt: { name: 'GPT 5.3 Codex', model: 'openai/gpt-5.3-codex', vision: true, fileUpload: true },
-            deepseek: { name: 'DeepSeek V4 Pro', model: 'deepseek/deepseek-v4-pro', vision: false, fileUpload: false },
+            free: { name: 'OpenRouter Free', model: 'openrouter/free', vision: true, fileUpload: true },
+            deepseek: { name: 'DeepSeek V4 Flash', model: 'deepseek/deepseek-v4-flash', vision: false, fileUpload: false },
             qwen: { name: 'Qwen Coder', model: 'qwen/qwen3-coder-next', vision: false, fileUpload: false },
             gemini: { name: 'Gemini 3 Flash', model: 'gemini-3-flash-preview', vision: true, fileUpload: true }
         };
 
-        let currentProvider = 'gpt';
+        let currentProvider = 'free';
         const chatMessages = document.getElementById('chat-messages');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
@@ -1479,8 +1483,8 @@
 
         const STATUS_STATES = [
             { label: 'Active', color: '#10b981' },
-            { label: 'Busy',   color: '#ef4444' },
-            { label: 'Away',   color: '#f59e0b' }
+            { label: 'Busy', color: '#ef4444' },
+            { label: 'Away', color: '#f59e0b' }
         ];
         let statusIdx = 0;
 
@@ -1499,11 +1503,11 @@
             if (selectedFileData) {
                 const m = MODELS[currentProvider];
                 if (selectedFileData.fileType === 'image' && !m.vision) {
-                    alert(`Model ${m.name} tidak mendukung input gambar. Ganti ke GPT atau Gemini.`);
+                    alert(`Model ${m.name} tidak mendukung input gambar. Ganti ke Free atau Gemini.`);
                     return;
                 }
                 if (selectedFileData.fileType !== 'image' && !m.fileUpload) {
-                    alert(`Model ${m.name} tidak mendukung upload file/dokumen. Gunakan GPT atau Gemini.`);
+                    alert(`Model ${m.name} tidak mendukung upload file/dokumen. Gunakan Free atau Gemini.`);
                     return;
                 }
             }
@@ -1602,7 +1606,7 @@
                             if (fd.fileType === 'image') {
                                 contentParts.push({ type: 'image_url', image_url: { url: `data:${fd.mimeType};base64,${fd.base64}` } });
                             } else if (fd.fileType === 'document' && fd.base64) {
-                                // PDF / DOCX via base64 — GPT-4o supports it via image_url trick
+                                // PDF / DOCX via base64 — Vision models often support it via image_url trick
                                 contentParts.push({ type: 'image_url', image_url: { url: `data:${fd.mimeType};base64,${fd.base64}` } });
                             } else if (fd.fileType === 'text' && fd.text) {
                                 contentParts[0].text += `\n\n[Lampiran: ${fd.name || 'file.txt'}]\n\`\`\`\n${fd.text}\n\`\`\``;
@@ -1629,7 +1633,7 @@
                 const data = await res.json();
 
                 // Qwen (via OpenRouter) menggunakan format data.choices seperti OpenAI
-                const aiResponse = (currentProvider === 'gpt' || currentProvider === 'deepseek' || currentProvider === 'qwen')
+                const aiResponse = (currentProvider === 'free' || currentProvider === 'deepseek' || currentProvider === 'qwen')
                     ? (data.choices?.[0]?.message?.content || 'Gagal mendapatkan respon.')
                     : (data.candidates?.[0]?.content?.parts?.[0]?.text || 'Gagal mendapatkan respon.');
 
