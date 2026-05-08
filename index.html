@@ -1703,11 +1703,13 @@
                     const reader = new FileReader();
                     reader.onload = function (event) {
                         selectedFileData = {
+                            fileType: 'image',
+                            name: 'clipboard-image.png',
                             mimeType: blob.type,
                             base64: event.target.result.split(',')[1],
                             preview: event.target.result
                         };
-                        showPreview(selectedFileData.preview);
+                        showPreview(selectedFileData);
                     };
                     reader.readAsDataURL(blob);
                 }
