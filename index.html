@@ -940,71 +940,115 @@
             }
 
             .app-header {
-                padding: 0.8rem 1rem;
+                padding: 0.7rem 1rem;
+                gap: 0.5rem;
             }
 
             .logo-text {
-                font-size: 1.2rem;
+                font-size: 1.1rem;
             }
 
             .header-status {
-                gap: 0.8rem;
-            }
-
-            .model-indicator {
-                padding: 0.4rem 0.8rem;
-                font-size: 0.8rem;
-            }
-
-            .chat-area {
-                padding: 1rem;
-                gap: 1rem;
-            }
-
-            .message {
-                max-width: 92%;
-                font-size: 0.95rem;
-                padding: 0.7rem 1rem;
-            }
-
-            .input-container {
-                padding: 0.8rem 1rem 1rem;
-            }
-
-            .controls-row {
-                margin-bottom: 1rem;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                padding-bottom: 5px;
-            }
-
-            .segmented-control {
+                gap: 0.6rem;
                 flex-shrink: 0;
             }
 
+            .model-indicator {
+                padding: 0.35rem 0.7rem;
+                font-size: 0.75rem;
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            #current-model-label {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                max-width: 80px;
+            }
+
+            .chat-area {
+                padding: 0.8rem 0.8rem;
+                gap: 0.8rem;
+            }
+
+            .message {
+                max-width: 94%;
+                font-size: 0.9rem;
+                padding: 0.65rem 0.9rem;
+            }
+
+            /* Mobile table: horizontal scroll */
+            .message table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: nowrap;
+                font-size: 0.8rem;
+            }
+
+            .input-container {
+                padding: 0.6rem 0.8rem 0.8rem;
+            }
+
+            /* controls-row: stack jadi 2 baris */
+            .controls-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+
+            /* Segmented control: scroll horizontal di baris sendiri */
+            .segmented-control {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 2px;
+                flex-shrink: 0;
+                display: flex;
+            }
+
             .segment-btn {
-                padding: 0.5rem 1rem;
-                font-size: 0.85rem;
+                padding: 0.45rem 0.9rem;
+                font-size: 0.8rem;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+
+            /* Context badge: baris kedua, rata kiri, kompak */
+            #context-indicator {
+                align-self: flex-start !important;
+                font-size: 0.72rem !important;
+                padding: 3px 8px !important;
                 white-space: nowrap;
             }
 
             .input-wrapper {
-                padding: 0.6rem 1rem;
-                gap: 0.8rem;
+                padding: 0.5rem 0.8rem;
+                gap: 0.7rem;
             }
 
             #user-input {
-                font-size: 1rem;
+                font-size: 0.95rem;
             }
 
             .action-btn {
-                width: 42px;
-                height: 42px;
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+            }
+
+            .file-upload-label {
+                width: 36px;
+                height: 36px;
             }
 
             .modal-content {
-                padding: 1.5rem;
+                padding: 1.2rem;
                 width: 95%;
+                border-radius: 16px;
             }
 
             .message-img {
@@ -1050,14 +1094,17 @@
                         </path>
                     </svg>
                 </button>
-                <div class="model-indicator">
-                    <div class="status-dot"></div>
-                    <span id="current-model-label">Gpt Codex 5.3</span>
-                </div>
-                <div id="model-status-badge"
-                    style="font-size: 0.75rem; font-weight: 700; color: var(--secondary); background: rgba(16, 185, 129, 0.1); padding: 5px 10px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
-                    Online
-                </div>
+                <button id="model-status-badge" onclick="toggleStatus()" title="Klik untuk ganti status" style="
+                    background: transparent; border: none; cursor: pointer;
+                    display: flex; align-items: center;
+                    padding: 4px; border-radius: 8px;
+                    transition: background 0.2s ease;
+                " onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                    <svg id="flag-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: var(--secondary); transition: color 0.3s ease;">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                        <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    </svg>
+                </button>
             </div>
         </header>
 
@@ -1194,7 +1241,6 @@
         const chatMessages = document.getElementById('chat-messages');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
-        const modelLabel = document.getElementById('current-model-label');
         let conversationHistory = JSON.parse(localStorage.getItem('ai_hub_history')) || [];
         let selectedFileData = null;
 
@@ -1423,13 +1469,26 @@
             document.querySelectorAll('.segment-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.textContent.toLowerCase().includes(provider));
             });
-            modelLabel.textContent = MODELS[provider].name;
 
             const sysMsg = document.createElement('div');
             sysMsg.style.cssText = 'text-align: center; font-size: 0.75rem; color: var(--text-muted); margin: 0.5rem 0; opacity: 0.7;';
             sysMsg.textContent = `Switched to ${MODELS[provider].name}`;
             chatMessages.appendChild(sysMsg);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        const STATUS_STATES = [
+            { label: 'Active', color: '#10b981' },
+            { label: 'Busy',   color: '#ef4444' },
+            { label: 'Away',   color: '#f59e0b' }
+        ];
+        let statusIdx = 0;
+
+        function toggleStatus() {
+            statusIdx = (statusIdx + 1) % STATUS_STATES.length;
+            const s = STATUS_STATES[statusIdx];
+            document.getElementById('flag-icon').style.color = s.color;
+            document.getElementById('model-status-badge').title = s.label;
         }
 
         async function sendMessage() {
