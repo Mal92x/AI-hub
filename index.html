@@ -1628,10 +1628,10 @@
             conversationHistory.push(historyEntry);
             saveHistory();
 
-            try {
+            const performApiCall = async (provider) => {
                 let url, body, headers = { 'Content-Type': 'application/json' };
 
-                if (currentProvider === 'gemini') {
+                if (provider === 'gemini') {
                     url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELS.gemini.model}:generateContent?key=${API_KEYS.gemini}`;
 
                     const customPrompt = localStorage.getItem('ai_hub_custom_prompt');
@@ -1682,7 +1682,7 @@
                     const customPrompt = localStorage.getItem('ai_hub_custom_prompt') || 'You are a helpful assistant';
 
                     // Filter riwayat untuk OpenRouter (bersihkan gambar jika model tidak mendukung vision)
-                    const isVisionModel = MODELS[currentProvider].vision;
+                    const isVisionModel = MODELS[provider].vision;
                     const messages = [{ role: 'system', content: customPrompt }];
 
                     conversationHistory.forEach(msg => {
@@ -1695,7 +1695,7 @@
                                 // PDF / DOCX via base64 — Vision models often support it via image_url trick
                                 contentParts.push({ type: 'image_url', image_url: { url: `data:${fd.mimeType};base64,${fd.base64}` } });
                             } else if (fd.fileType === 'text' && fd.text) {
-                                contentParts[0].text += `\n\n[Lampiran: ${fd.name || 'file.txt'}]\n\`\`\`\n${fd.text}\n\`\`\``;
+                                contentParts[0].text += `\n\n[Lampiran: ${fd.name || 'file.txt'}]\n\`\`\`\n${fd.text}\n\`\`\circ;`;
                             }
                             messages.push({ role: msg.role, content: contentParts });
                         } else if (fd && fd.fileType === 'text' && fd.text) {
@@ -1708,24 +1708,103 @@
 
                     body = {
                         messages: messages,
-                        model: MODELS[currentProvider].model,
+                        model: MODELS[provider].model,
                         max_tokens: 4000
                     };
                 }
 
                 const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-                if (!res.ok) throw new Error((await res.json()).error?.message || 'API Error');
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    let errMsg = 'API Error';
+                    try {
+                        const errJson = JSON.parse(errorText);
+                        errMsg = errJson.error?.message || errJson.message || errMsg;
+                    } catch (_) {}
+                    throw new Error(errMsg);
+                }
 
                 const data = await res.json();
 
                 // Qwen (via OpenRouter) menggunakan format data.choices seperti OpenAI
-                const aiResponse = (currentProvider === 'free' || currentProvider === 'deepseek' || currentProvider === 'qwen')
+                const aiResponse = (provider === 'free' || provider === 'deepseek' || provider === 'qwen')
                     ? (data.choices?.[0]?.message?.content || 'Gagal mendapatkan respon.')
                     : (data.candidates?.[0]?.content?.parts?.[0]?.text || 'Gagal mendapatkan respon.');
 
+                return aiResponse;
+            };
+
+            // Priority fallback list
+            const fallbackPriority = ['free', 'qwen', 'deepseek', 'gemini'];
+            
+            // Build the queue of providers to try: selected one first, then others in priority order
+            const providersToTry = [currentProvider];
+            fallbackPriority.forEach(p => {
+                if (p !== currentProvider) {
+                    providersToTry.push(p);
+                }
+            });
+
+            const hasKey = (provider) => {
+                if (provider === 'gemini') return !!API_KEYS.gemini;
+                return !!API_KEYS.deepseek;
+            };
+
+            let aiResponse = null;
+            let finalUsedProvider = currentProvider;
+            let success = false;
+            let lastError = null;
+
+            try {
+                for (const provider of providersToTry) {
+                    if (!hasKey(provider)) {
+                        console.warn(`Skipping fallback provider ${provider}: API Key missing.`);
+                        continue;
+                    }
+
+                    if (fileToSend) {
+                        const m = MODELS[provider];
+                        if (fileToSend.fileType === 'image' && !m.vision) {
+                            console.warn(`Skipping provider ${provider}: Model does not support images.`);
+                            continue;
+                        }
+                        if (fileToSend.fileType !== 'image' && !m.fileUpload) {
+                            console.warn(`Skipping provider ${provider}: Model does not support text/doc attachments.`);
+                            continue;
+                        }
+                    }
+
+                    try {
+                        console.log(`Attempting API hit using provider: ${provider}`);
+                        try {
+                            // Attempt 1
+                            aiResponse = await performApiCall(provider);
+                        } catch (firstErr) {
+                            console.warn(`API call failed for ${provider}, retrying once...`, firstErr);
+                            // Attempt 2 (Retry)
+                            aiResponse = await performApiCall(provider);
+                        }
+                        
+                        finalUsedProvider = provider;
+                        success = true;
+                        break;
+                    } catch (err) {
+                        console.warn(`Provider ${provider} failed completely: ${err.message}`);
+                        lastError = err;
+                    }
+                }
+
+                if (!success) {
+                    throw new Error(lastError ? lastError.message : 'Semua model gagal merespon.');
+                }
+
                 conversationHistory.push({ role: 'assistant', content: aiResponse });
                 saveHistory();
-                appendMessage('assistant', aiResponse, MODELS[currentProvider].name);
+                
+                const sourceLabel = finalUsedProvider !== currentProvider 
+                    ? `${MODELS[finalUsedProvider].name} (Fallback)` 
+                    : MODELS[currentProvider].name;
+                appendMessage('assistant', aiResponse, sourceLabel);
             } catch (err) {
                 appendMessage('assistant', `Error: ${err.message}`, 'System Error');
             } finally {
