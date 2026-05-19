@@ -1332,7 +1332,7 @@
 
     <script>
         // Configuration
-        const CONFIG_SYNC_URL = 'https://script.google.com/macros/s/AKfycbweVHgeYK9nBrpX2fPWPbiqnPYKSHeIC_9Tlv0q91Fk_IB9RAr6UF_eEt4uDtjQk1o0/exec';
+        const CONFIG_SYNC_URL = 'https://script.google.com/macros/s/AKfycbzsoNxLlIb4Pvcv0iyZe_uyCen1z6QRFHyWQsk2tSiRQdaXQtMFG_5RYTOaH43xHjnrzA/exec';
 
         // API Keys Configuration (Persisted in LocalStorage)
         const API_KEYS = {
@@ -1814,14 +1814,18 @@
 
                 // Qwen (via OpenRouter) menggunakan format data.choices seperti OpenAI
                 const aiResponse = (provider === 'free' || provider === 'deepseek' || provider === 'qwen')
-                    ? (data.choices?.[0]?.message?.content || 'Gagal mendapatkan respon.')
-                    : (data.candidates?.[0]?.content?.parts?.[0]?.text || 'Gagal mendapatkan respon.');
+                    ? data.choices?.[0]?.message?.content
+                    : data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (!aiResponse) {
+                    throw new Error('Gagal mendapatkan respon.');
+                }
 
                 return aiResponse;
             };
 
             // Priority fallback list
-            const fallbackPriority = ['free', 'qwen', 'deepseek', 'gemini'];
+            const fallbackPriority = ['qwen', 'deepseek', 'gemini'];
 
             // Build the queue of providers to try: selected one first, then others in priority order
             const providersToTry = [currentProvider];
