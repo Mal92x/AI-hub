@@ -983,7 +983,9 @@
 
         /* Responsive Mobile Styles */
         @media (max-width: 768px) {
-            html, body {
+
+            html,
+            body {
                 height: 100dvh;
                 width: 100vw;
                 overflow: hidden;
@@ -1022,7 +1024,8 @@
             }
 
             .context-badge-header .context-text {
-                display: none; /* Hide text on mobile to save space, only show pulse dot */
+                display: none;
+                /* Hide text on mobile to save space, only show pulse dot */
             }
 
             .chat-area {
@@ -1080,12 +1083,15 @@
                 padding: 0.2rem;
                 border-radius: 12px;
                 gap: 0.2rem;
-                scrollbar-width: none; /* Firefox */
-                -ms-overflow-style: none;  /* IE/Edge */
+                scrollbar-width: none;
+                /* Firefox */
+                -ms-overflow-style: none;
+                /* IE/Edge */
             }
 
             .segmented-control::-webkit-scrollbar {
-                display: none; /* Chrome/Safari */
+                display: none;
+                /* Chrome/Safari */
             }
 
             .segment-btn {
@@ -1156,7 +1162,8 @@
             </a>
             <div class="header-status">
                 <div id="context-indicator" class="context-badge-header" title="Shared Context Active">
-                    <div class="status-dot" style="width: 6px; height: 6px; box-shadow: 0 0 6px var(--secondary);"></div>
+                    <div class="status-dot" style="width: 6px; height: 6px; box-shadow: 0 0 6px var(--secondary);">
+                    </div>
                     <span class="context-text">Shared Context</span>
                 </div>
                 <button class="action-btn-subtle" onclick="clearChat()" title="Clear Chat" style="margin-right: -8px;">
@@ -1245,7 +1252,8 @@
         </footer>
 
         <!-- Floating Scroll to Bottom Button -->
-        <button id="scroll-bottom-btn" class="scroll-bottom-btn" onclick="scrollToBottom(true)" title="Scroll to bottom">
+        <button id="scroll-bottom-btn" class="scroll-bottom-btn" onclick="scrollToBottom(true)"
+            title="Scroll to bottom">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -1294,25 +1302,37 @@
                 style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1.5rem; margin-top: 1.5rem;">
                 <label class="settings-label" style="color: var(--secondary);">Centralized Config Sync</label>
                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                    Sinkronisasi API Keys dari server konfigurasi (Google Apps Script).
+                    Sinkronisasi API Keys & System Instructions dari server konfigurasi (Google Sheets).
                 </p>
-                <button class="btn-secondary" onclick="syncFromSheet(event)"
-                    style="width: 100%; border-color: var(--secondary); color: var(--secondary); font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <polyline points="1 20 1 14 7 14"></polyline>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                    </svg>
-                    Sync API Keys Now
-                </button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn-secondary" onclick="syncFromSheet(event)"
+                        style="width: 100%; border-color: var(--secondary); color: var(--secondary); font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        Sync From Sheet
+                    </button>
+                    <button class="btn-secondary" onclick="pushInstructionsToSheet(event)"
+                        style="width: 100%; border-color: var(--secondary); color: var(--secondary); font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Push to Sheet
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         // Configuration
-        const CONFIG_SYNC_URL = 'https://script.google.com/macros/s/AKfycbyeOvl4AumWATeE7-RDmFeemCfutLCmw0WG-9UgMIVqwRFiL38tDndzU9rg3xubscnlmA/exec';
+        const CONFIG_SYNC_URL = 'https://script.google.com/macros/s/AKfycbweVHgeYK9nBrpX2fPWPbiqnPYKSHeIC_9Tlv0q91Fk_IB9RAr6UF_eEt4uDtjQk1o0/exec';
 
         // API Keys Configuration (Persisted in LocalStorage)
         const API_KEYS = {
@@ -1532,6 +1552,57 @@
             }
         }
 
+        async function pushInstructionsToSheet(e) {
+            const btn = e ? e.target : null;
+            const originalText = btn ? btn.innerHTML : '';
+            const instructions = document.getElementById('custom-instructions').value.trim();
+
+            if (!instructions) {
+                alert('System Instructions kosong! Tidak ada yang bisa di-upload.');
+                return;
+            }
+
+            if (!confirm('Apakah Anda yakin ingin memperbarui System Instructions di Google Sheet?\nTindakan ini akan menimpa data yang ada di sheet "customize".')) {
+                return;
+            }
+
+            if (btn) {
+                btn.textContent = 'Pushing...';
+                btn.disabled = true;
+            }
+
+            try {
+                // Send POST request with action updateInstructions
+                const response = await fetch(CONFIG_SYNC_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8' // Simple content-type to avoid CORS preflight options
+                    },
+                    body: JSON.stringify({
+                        action: 'updateInstructions',
+                        instructions: instructions
+                    })
+                });
+
+                if (!response.ok) throw new Error('Gagal terhubung ke server konfigurasi.');
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('Sukses! System Instructions berhasil diperbarui di Google Sheets.');
+                } else {
+                    throw new Error(result.message || 'Gagal memperbarui di server.');
+                }
+            } catch (err) {
+                console.error('Push Error:', err);
+                alert('Error: ' + err.message + '\n\nPastikan Apps Script Anda mendukung metode POST (doPost) dan sudah dideploy sebagai versi baru.');
+            } finally {
+                if (btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }
+        }
+
         function updateKeyLocal(type, key) {
             if (type.includes('gemini')) {
                 localStorage.setItem('ai_hub_gemini_key', key);
@@ -1687,20 +1758,35 @@
 
                     conversationHistory.forEach(msg => {
                         const fd = msg.file || (msg.image ? { fileType: 'image', mimeType: msg.image.mimeType, base64: msg.image.base64 } : null);
-                        if (fd && isVisionModel) {
+                        if (fd && fd.fileType === 'text' && fd.text) {
+                            // OpenRouter prompt caching format for text file attachments
+                            const contentParts = [
+                                {
+                                    type: 'text',
+                                    text: 'Use the reference below when answering.'
+                                },
+                                {
+                                    type: 'text',
+                                    text: `[Lampiran: ${fd.name || 'file.txt'}]\n\`\`\`\n${fd.text}\n\`\`\``,
+                                    cache_control: {
+                                        type: 'ephemeral'
+                                    }
+                                },
+                                {
+                                    type: 'text',
+                                    text: msg.content || 'Summarize the main implementation details.'
+                                }
+                            ];
+                            messages.push({ role: msg.role, content: contentParts });
+                        } else if (fd && isVisionModel) {
                             const contentParts = [{ type: 'text', text: msg.content || 'Analyze this' }];
                             if (fd.fileType === 'image') {
                                 contentParts.push({ type: 'image_url', image_url: { url: `data:${fd.mimeType};base64,${fd.base64}` } });
                             } else if (fd.fileType === 'document' && fd.base64) {
                                 // PDF / DOCX via base64 — Vision models often support it via image_url trick
                                 contentParts.push({ type: 'image_url', image_url: { url: `data:${fd.mimeType};base64,${fd.base64}` } });
-                            } else if (fd.fileType === 'text' && fd.text) {
-                                contentParts[0].text += `\n\n[Lampiran: ${fd.name || 'file.txt'}]\n\`\`\`\n${fd.text}\n\`\`\circ;`;
                             }
                             messages.push({ role: msg.role, content: contentParts });
-                        } else if (fd && fd.fileType === 'text' && fd.text) {
-                            // Model non-vision tapi ada file teks → kirim sebagai teks
-                            messages.push({ role: msg.role, content: `${msg.content || ''}\n\n[Lampiran: ${fd.name}]\n\`\`\`\n${fd.text}\n\`\`\`` });
                         } else {
                             messages.push({ role: msg.role, content: msg.content });
                         }
@@ -1720,7 +1806,7 @@
                     try {
                         const errJson = JSON.parse(errorText);
                         errMsg = errJson.error?.message || errJson.message || errMsg;
-                    } catch (_) {}
+                    } catch (_) { }
                     throw new Error(errMsg);
                 }
 
@@ -1736,7 +1822,7 @@
 
             // Priority fallback list
             const fallbackPriority = ['free', 'qwen', 'deepseek', 'gemini'];
-            
+
             // Build the queue of providers to try: selected one first, then others in priority order
             const providersToTry = [currentProvider];
             fallbackPriority.forEach(p => {
@@ -1784,7 +1870,7 @@
                             // Attempt 2 (Retry)
                             aiResponse = await performApiCall(provider);
                         }
-                        
+
                         finalUsedProvider = provider;
                         success = true;
                         break;
@@ -1800,9 +1886,9 @@
 
                 conversationHistory.push({ role: 'assistant', content: aiResponse });
                 saveHistory();
-                
-                const sourceLabel = finalUsedProvider !== currentProvider 
-                    ? `${MODELS[finalUsedProvider].name} (Fallback)` 
+
+                const sourceLabel = finalUsedProvider !== currentProvider
+                    ? `${MODELS[finalUsedProvider].name} (Fallback)`
                     : MODELS[currentProvider].name;
                 appendMessage('assistant', aiResponse, sourceLabel);
             } catch (err) {
@@ -2107,7 +2193,7 @@
             window.visualViewport.addEventListener('resize', () => {
                 const height = window.visualViewport.height;
                 const container = document.querySelector('.app-container');
-                
+
                 // Only apply visualViewport height on mobile layouts
                 if (window.innerWidth <= 768) {
                     container.style.height = `${height}px`;
