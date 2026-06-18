@@ -2508,7 +2508,7 @@
 
             const performApiCall = async (provider) => {
                 let url, body, headers = { 'Content-Type': 'application/json' };
-
+                console.log('cek API', provider);
                 if (provider === 'gemini') {
                     url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELS.gemini.model}:generateContent?key=${API_KEYS.gemini}`;
 
