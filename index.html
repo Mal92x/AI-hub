@@ -191,12 +191,23 @@
             90% { opacity: 1; }
             100% { transform: translateY(-100vh) scale(1); opacity: 0; }
         }
+        /* Bad Practice */
 
+/* Pastikan area chat tumbuh fleksibel dan input tetap di bawah */
+            .chat-messages {
+                flex: 1;
+                overflow-y: auto;
+            }
+            
+            .input-container {
+                flex-shrink: 0;
+            }
         /* Main Container */
         .app-container {
             width: 98%;
             max-width: 1400px;
-            height: 92vh;
+            height: 100dvh; /* Dynamic Viewport Height */
+            flex-direction: column;
             background: var(--glass-bg);
             backdrop-filter: blur(50px) saturate(1.5);
             -webkit-backdrop-filter: blur(50px) saturate(1.5);
