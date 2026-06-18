@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>AI Hub - Intelligent Workspace</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
@@ -191,23 +191,12 @@
             90% { opacity: 1; }
             100% { transform: translateY(-100vh) scale(1); opacity: 0; }
         }
-        /* Bad Practice */
 
-/* Pastikan area chat tumbuh fleksibel dan input tetap di bawah */
-            .chat-messages {
-                flex: 1;
-                overflow-y: auto;
-            }
-            
-            .input-container {
-                flex-shrink: 0;
-            }
         /* Main Container */
         .app-container {
             width: 98%;
             max-width: 1400px;
-            height: 100dvh; /* Dynamic Viewport Height */
-            flex-direction: column;
+            height: 92vh;
             background: var(--glass-bg);
             backdrop-filter: blur(50px) saturate(1.5);
             -webkit-backdrop-filter: blur(50px) saturate(1.5);
@@ -523,6 +512,8 @@
             background: rgba(10, 15, 30, 0.35);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            flex-shrink: 0;
+            min-height: 48px;
         }
 
         .header-left-controls {
@@ -660,6 +651,7 @@
             border-top: 1px solid var(--glass-border);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            flex-shrink: 0;
         }
 
         .controls-row {
@@ -1460,13 +1452,21 @@
 
             .app-header {
                 padding: 0.6rem 0.8rem;
+                padding-top: calc(0.6rem + env(safe-area-inset-top, 0px));
                 gap: 0.4rem;
+                background: rgba(10, 15, 30, 0.65);
             }
 
             .context-badge-header {
                 padding: 0.35rem 0.5rem;
                 font-size: 0.72rem;
                 gap: 4px;
+            }
+
+            .sidebar-toggle-btn {
+                background: rgba(139, 92, 246, 0.12);
+                border-color: rgba(139, 92, 246, 0.25);
+                color: var(--primary-light);
             }
 
             .context-badge-header .context-text {
@@ -1510,7 +1510,7 @@
             }
 
             .input-container {
-                padding: 0.5rem 0.6rem 0.8rem;
+                padding: 0.5rem 0.6rem calc(0.8rem + env(safe-area-inset-bottom, 0px));
                 background: rgba(10, 15, 30, 0.65);
             }
 
