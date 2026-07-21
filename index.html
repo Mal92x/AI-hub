@@ -2773,7 +2773,8 @@
                     const result = await response.json();
                     if (result.status === 'success') {
                         updateCloudStatus('saved');
-                        loadChatHistoryList(false);
+                        // Delay refresh agar Google Sheets punya waktu commit data
+                        setTimeout(() => loadChatHistoryList(false), 1500);
                     } else {
                         throw new Error(result.message || 'Unknown server error');
                     }
@@ -2795,7 +2796,10 @@
             }
             
             try {
-                const response = await fetch(chatHistoryUrl + '?action=list');
+                // Cache-busting: tambahkan timestamp agar browser tidak pakai cached response
+                const cacheBuster = '_t=' + Date.now();
+                const separator = chatHistoryUrl.includes('?') ? '&' : '?';
+                const response = await fetch(chatHistoryUrl + separator + 'action=list&' + cacheBuster);
                 if (!response.ok) throw new Error('Gagal mengambil riwayat');
                 
                 const result = await response.json();
@@ -2856,7 +2860,7 @@
             updateCloudStatus('saving');
             
             try {
-                const response = await fetch(`${chatHistoryUrl}?action=detail&sessionId=${encodeURIComponent(sessionId)}`);
+                const response = await fetch(`${chatHistoryUrl}?action=detail&sessionId=${encodeURIComponent(sessionId)}&_t=${Date.now()}`);
                 if (!response.ok) throw new Error('Gagal memuat detail percakapan');
                 
                 const result = await response.json();
